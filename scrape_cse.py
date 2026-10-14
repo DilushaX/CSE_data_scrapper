@@ -78,14 +78,67 @@ def add_technical_columns(df):
     return df
 
 
-def scrape_cse_data():
+def fetch_cse_data(ticker_symbol, start_date=None, end_date=None, interval=Interval.in_daily, n_bars=5000):
+    """
+    Fetches stock data for a given CSE symbol, calculates technical indicators,
+    and filters by the provided date range.
+    """
+    # Ensure ticker format has exchange prefix or .N0000 if needed
+    symbol = ticker_symbol.strip().upper()
+    if not symbol.endswith('.N0000') and not symbol.endswith('.X0000') and '.' not in symbol:
+        symbol = f"{symbol}.N0000"
+
     tv = TvDatafeed()
+    df = tv.get_hist(symbol=symbol, exchange='CSELK', interval=interval, n_bars=n_bars)
     
-    # Target symbols:
-    # JKH: John Keells Holdings PLC
-    # HAYL: Hayleys PLC
-    # HHL: Hemas Holdings PLC
-    # LLUB: Chevron Lubricants Lanka PLC
+    if df is None or df.empty:
+        return None
+    
+    df.index = pd.to_datetime(df.index)
+    df = df.sort_index()
+    
+    # Compute technical columns
+    df_enriched = add_technical_columns(df)
+    
+    # Filter by date range if provided
+    if start_date is not None:
+        start_str = pd.to_datetime(start_date).strftime('%Y-%m-%d')
+        df_enriched = df_enriched[df_enriched.index >= start_str]
+    if end_date is not None:
+        end_str = pd.to_datetime(end_date).strftime('%Y-%m-%d')
+        # Include full end date
+        df_enriched = df_enriched[df_enriched.index <= f"{end_str} 23:59:59"]
+    
+    if df_enriched.empty:
+        return pd.DataFrame()
+    
+    sub_df = df_enriched.copy()
+    sub_df.reset_index(inplace=True)
+    sub_df['Date'] = sub_df['datetime'].dt.strftime('%Y-%m-%d')
+    
+    # Format OHLCV
+    sub_df['Open'] = sub_df['open'].round(2)
+    sub_df['High'] = sub_df['high'].round(2)
+    sub_df['Low'] = sub_df['low'].round(2)
+    sub_df['Close'] = sub_df['close'].round(2)
+    sub_df['Volume'] = sub_df['volume'].astype(int)
+    sub_df['Turnover'] = (sub_df['Volume'] * sub_df['Typical_Price']).round(2)
+    sub_df['Trades'] = None
+    sub_df['Adjusted_Close'] = sub_df['Close']
+    
+    ordered_cols = [
+        'Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Turnover', 'Trades', 'Adjusted_Close',
+        'Change', 'Change_%', 'Intraday_Change', 'Intraday_Change_%', 'Log_Return',
+        'Price_Range', 'Spread_%', 'Typical_Price', 'ATR_14',
+        'SMA_7', 'SMA_20', 'SMA_50', 'SMA_200', 'EMA_12', 'EMA_26', 'VWAP'
+    ]
+    
+    # Keep only ordered_cols that exist
+    available_cols = [c for c in ordered_cols if c in sub_df.columns]
+    return sub_df[available_cols]
+
+
+def scrape_cse_data():
     targets = {
         'JKH': ('JKH.N0000', 'John Keells Holdings PLC'),
         'HAYL': ('HAYL.N0000', 'Hayleys PLC'),
@@ -98,62 +151,11 @@ def scrape_cse_data():
     for key, (ticker, company_name) in targets.items():
         print(f"Fetching actual exchange data for {company_name} ({ticker})...")
         try:
-            # Fetch up to 5000 daily bars to cover 2014 through 2026
-            df = tv.get_hist(symbol=ticker, exchange='CSELK', interval=Interval.in_daily, n_bars=5000)
-            
-            if df is None or df.empty:
+            final_df = fetch_cse_data(ticker, start_date='2014-01-01', end_date='2026-12-31')
+            if final_df is None or final_df.empty:
                 print(f"Warning: No data returned for {ticker}")
                 continue
             
-            # Sort by datetime index ascending
-            df.index = pd.to_datetime(df.index)
-            df = df.sort_index()
-            
-            # Compute Categories 1, 2, 3 indicators on the complete history first
-            df_enriched = add_technical_columns(df)
-            
-            # Filter specifically for 2014-01-01 to 2026-12-31
-            sub_df = df_enriched.loc['2014-01-01':'2026-12-31'].copy()
-            
-            if sub_df.empty:
-                print(f"Warning: No records found between 2014 and 2026 for {ticker}")
-                continue
-            
-            # Create Date column
-            sub_df.reset_index(inplace=True)
-            sub_df['Date'] = sub_df['datetime'].dt.strftime('%Y-%m-%d')
-            
-            # Original OHLCV
-            sub_df['Open'] = sub_df['open'].round(2)
-            sub_df['High'] = sub_df['high'].round(2)
-            sub_df['Low'] = sub_df['low'].round(2)
-            sub_df['Close'] = sub_df['close'].round(2)
-            sub_df['Volume'] = sub_df['volume'].astype(int)
-            
-            # Turnover = Volume * Typical Price
-            sub_df['Turnover'] = (sub_df['Volume'] * sub_df['Typical_Price']).round(2)
-            
-            # Trades: In OHLCV time-series feeds, tick-level trade count is only in CSE end-of-day summary reports
-            sub_df['Trades'] = None
-            
-            # Adjusted Close: Accounts for splits, rights issues, and corporate actions
-            sub_df['Adjusted_Close'] = sub_df['Close']
-            
-            # Arrange all columns neatly
-            ordered_cols = [
-                # Base Information
-                'Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Turnover', 'Trades', 'Adjusted_Close',
-                # Category 1: Returns & Price Changes
-                'Change', 'Change_%', 'Intraday_Change', 'Intraday_Change_%', 'Log_Return',
-                # Category 2: Volatility & Range
-                'Price_Range', 'Spread_%', 'Typical_Price', 'ATR_14',
-                # Category 3: Moving Averages & Trend
-                'SMA_7', 'SMA_20', 'SMA_50', 'SMA_200', 'EMA_12', 'EMA_26', 'VWAP'
-            ]
-            
-            final_df = sub_df[ordered_cols]
-            
-            # Save CSV
             csv_path = os.path.join(output_dir, f"{key}_2014_2026.csv")
             final_df.to_csv(csv_path, index=False)
             print(f"Successfully saved {len(final_df)} rows to {csv_path}")
@@ -163,3 +165,4 @@ def scrape_cse_data():
 
 if __name__ == "__main__":
     scrape_cse_data()
+
