@@ -49,7 +49,7 @@ CSE_data_scrapper/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/<your-username>/CSE_data_scrapper.git
+git clone https://github.com/DilushaX/CSE_data_scrapper.git
 cd CSE_data_scrapper
 ```
 
