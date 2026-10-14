@@ -1,0 +1,7 @@
+streamlit>=1.30.0
+plotly>=5.18.0
+pandas>=2.0.0
+numpy>=1.24.0
+tvdatafeed>=2.1.0
+websocket-client>=1.6.0
+certifi>=2023.7.22

@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Streamlit config / cache
+.streamlit/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Scraped CSV outputs
+*.csv
+!sample_data/*.csv

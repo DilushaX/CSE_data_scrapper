@@ -36,7 +36,7 @@ def add_technical_columns(df):
     vol = df['volume']
     
     # -------------------------------------------------------------
-    # Category 1: Price Changes & Returns (මිල වෙනස්වීම් / ප්‍රතිලාභ)
+    # Category 1: Price Changes & Returns
     # -------------------------------------------------------------
     prev_close = close.shift(1)
     df['Change'] = (close - prev_close).round(2)
@@ -46,7 +46,7 @@ def add_technical_columns(df):
     df['Log_Return'] = np.log(close / prev_close).round(4)
     
     # -------------------------------------------------------------
-    # Category 2: Volatility & Range (මිල උච්චාවචනය සහ පරාසය)
+    # Category 2: Volatility & Range
     # -------------------------------------------------------------
     df['Price_Range'] = (high - low).round(2)
     df['Spread_%'] = ((df['Price_Range'] / low) * 100).round(2)
@@ -60,7 +60,7 @@ def add_technical_columns(df):
     df['ATR_14'] = tr.rolling(window=14, min_periods=1).mean().round(2)
     
     # -------------------------------------------------------------
-    # Category 3: Moving Averages / Trend (ප්‍රවණතා දර්ශක)
+    # Category 3: Moving Averages / Trend Indicators
     # -------------------------------------------------------------
     df['SMA_7'] = close.rolling(window=7, min_periods=1).mean().round(2)
     df['SMA_20'] = close.rolling(window=20, min_periods=1).mean().round(2)

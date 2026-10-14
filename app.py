@@ -25,7 +25,7 @@ st.markdown("""
     }
     .main-header {
         background: linear-gradient(135deg, #0d324d 0%, #7f5a83 100%);
-        padding: 20px 25px;
+        padding: 22px 28px;
         border-radius: 12px;
         color: white;
         margin-bottom: 25px;
@@ -33,30 +33,30 @@ st.markdown("""
     }
     .main-header h1 {
         margin: 0;
-        font-size: 2rem;
+        font-size: 2.1rem;
         font-weight: 700;
         color: #ffffff;
     }
     .main-header p {
-        margin: 5px 0 0 0;
-        color: #e0e0e0;
-        font-size: 0.95rem;
+        margin: 6px 0 0 0;
+        color: #e2e8f0;
+        font-size: 1rem;
     }
     .badge {
         display: inline-block;
         background-color: rgba(255, 255, 255, 0.2);
-        padding: 3px 10px;
+        padding: 4px 12px;
         border-radius: 20px;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        margin-top: 8px;
+        margin-top: 10px;
     }
     .stDownloadButton button {
         background-color: #2e7d32 !important;
         color: white !important;
         font-weight: bold !important;
         border-radius: 8px !important;
-        padding: 0.5rem 1.2rem !important;
+        padding: 0.5rem 1.4rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -101,18 +101,18 @@ def get_stock_data(symbol, start_date, end_date):
 # Sidebar: Controls
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/en/thumb/6/6f/Colombo_Stock_Exchange_logo.svg/320px-Colombo_Stock_Exchange_logo.svg.png", width=180)
-    st.markdown("### ⚙️ දත්ත තෝරාගැනීම (Settings)")
+    st.markdown("### Configuration")
     
     # 1. Company Selection
-    st.markdown("#### 1. සමාගම තෝරන්න (Select Company)")
+    st.markdown("#### 1. Select Company")
     stock_options = [f"{k} - {v['name']}" for k, v in POPULAR_STOCKS.items()]
-    stock_options.append("➕ Other / වෙනත් Ticker එකක්...")
+    stock_options.append("➕ Other / Custom Ticker...")
     
     selected_option = st.selectbox(
         "Company / Ticker:",
         options=stock_options,
         index=0,
-        help="Select a company from the CSE list or choose 'Other' to type a custom symbol."
+        help="Select a company from the list or choose 'Other' to enter any CSE symbol."
     )
     
     if "Other" in selected_option:
@@ -133,62 +133,62 @@ with st.sidebar:
     st.markdown("---")
     
     # 2. Date Range Selection
-    st.markdown("#### 2. දින පරාසය (Date Range)")
+    st.markdown("#### 2. Date Range")
     
     today = datetime.date.today()
     preset_choice = st.radio(
-        "පෙරසැකසුම් (Presets):",
+        "Quick Presets:",
         options=[
-            "1 Month (මාස 1)",
-            "6 Months (මාස 6)",
-            "1 Year (වසර 1)",
-            "3 Years (වසර 3)",
-            "5 Years (වසර 5)",
+            "1 Month",
+            "6 Months",
+            "1 Year",
+            "3 Years",
+            "5 Years",
             "Max (2014 - Present)",
-            "Custom Range (අභිරුචි)"
+            "Custom Range"
         ],
         index=2
     )
     
-    if preset_choice.startswith("1 Month"):
+    if preset_choice == "1 Month":
         default_start = today - datetime.timedelta(days=30)
-    elif preset_choice.startswith("6 Months"):
+    elif preset_choice == "6 Months":
         default_start = today - datetime.timedelta(days=180)
-    elif preset_choice.startswith("1 Year"):
+    elif preset_choice == "1 Year":
         default_start = today - datetime.timedelta(days=365)
-    elif preset_choice.startswith("3 Years"):
+    elif preset_choice == "3 Years":
         default_start = today - datetime.timedelta(days=365 * 3)
-    elif preset_choice.startswith("5 Years"):
+    elif preset_choice == "5 Years":
         default_start = today - datetime.timedelta(days=365 * 5)
     elif preset_choice.startswith("Max"):
         default_start = datetime.date(2014, 1, 1)
     else:
         default_start = today - datetime.timedelta(days=365)
         
-    start_date = st.date_input("ආරම්භක දිනය (Start Date):", value=default_start, min_value=datetime.date(2010, 1, 1), max_value=today)
-    end_date = st.date_input("අවසාන දිනය (End Date):", value=today, min_value=datetime.date(2010, 1, 1), max_value=today)
+    start_date = st.date_input("Start Date:", value=default_start, min_value=datetime.date(2010, 1, 1), max_value=today)
+    end_date = st.date_input("End Date:", value=today, min_value=datetime.date(2010, 1, 1), max_value=today)
     
     if start_date > end_date:
-        st.error("Error: Start Date must be before End Date!")
+        st.error("Error: Start Date must be on or before End Date!")
 
     st.markdown("---")
     
     # 3. Chart Options
-    st.markdown("#### 3. ප්‍රස්තාර විකල්ප (Chart Overlays)")
-    show_candlestick = st.checkbox("Show Candlestick (ජපන් ඉටිපන්දම් ප්‍රස්තාරය)", value=True)
-    show_volume = st.checkbox("Show Volume (වෙළඳ පරිමාව)", value=True)
+    st.markdown("#### 3. Chart Options")
+    show_candlestick = st.checkbox("Show Candlestick (OHLC)", value=True)
+    show_volume = st.checkbox("Show Volume Subplot", value=True)
     show_sma = st.multiselect("Moving Averages (SMA):", options=["SMA_7", "SMA_20", "SMA_50", "SMA_200"], default=["SMA_20", "SMA_50"])
     show_vwap = st.checkbox("Show VWAP", value=False)
     
-    fetch_btn = st.button("🔄 දත්ත යාවත්කාලීන කරන්න (Fetch Data)", use_container_width=True, type="primary")
+    fetch_btn = st.button("🔄 Refresh Data", use_container_width=True, type="primary")
 
 # Main Page Header
 st.markdown(f"""
 <div class="main-header">
-    <h1>🏛️ Colombo Stock Exchange (CSE) Data Scraper</h1>
-    <p>ශ්‍රී ලංකා කොටස් වෙළඳපොළේ දත්ත විශ්ලේෂණය සහ බාගත කිරීමේ පද්ධතිය</p>
-    <span class="badge">Selected: {company_display} ({target_symbol})</span>
-    <span class="badge" style="margin-left: 8px;">Date: {start_date} to {end_date}</span>
+    <h1>🏛️ Colombo Stock Exchange (CSE) Data Scraper & Explorer</h1>
+    <p>Historical price extraction, technical indicator calculations, and interactive visualizations</p>
+    <span class="badge">Stock: {company_display} ({target_symbol})</span>
+    <span class="badge" style="margin-left: 8px;">Date Range: {start_date} to {end_date}</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -212,16 +212,16 @@ else:
     avg_atr = df['ATR_14'].dropna().iloc[-1] if 'ATR_14' in df and not df['ATR_14'].dropna().empty else 0.0
 
     col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric("Latest Close (රු.)", f"LKR {curr_close:,.2f}", f"{change_val:+.2f} ({change_pct:+.2f}%)")
-    col2.metric("Period High (උපරිම)", f"LKR {high_period:,.2f}")
-    col3.metric("Period Low (අවම)", f"LKR {low_period:,.2f}")
-    col4.metric("Total Volume (පරිමාව)", f"{tot_volume:,}")
+    col1.metric("Latest Close", f"LKR {curr_close:,.2f}", f"{change_val:+.2f} ({change_pct:+.2f}%)")
+    col2.metric("Period High", f"LKR {high_period:,.2f}")
+    col3.metric("Period Low", f"LKR {low_period:,.2f}")
+    col4.metric("Total Volume", f"{tot_volume:,}")
     col5.metric("Volatility (ATR 14)", f"LKR {avg_atr:,.2f}")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # 2. Interactive Charts (Plotly)
-    st.subheader("📈 මිල ප්‍රස්ථාරය සහ දර්ශක (Price Chart & Indicators)")
+    st.subheader("📈 Price Chart & Technical Indicators")
     
     rows_needed = 2 if show_volume else 1
     row_heights = [0.75, 0.25] if show_volume else [1.0]
@@ -316,13 +316,13 @@ else:
 
     # 3. Data Tables & Categorized Indicators
     st.markdown("---")
-    st.subheader("📋 තාක්ෂණික දර්ශක සහ දත්ත සටහන (Technical Data Table)")
+    st.subheader("📋 Technical Indicator Data Table")
 
     tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 සියලු දත්ත (All Columns)",
-        "💰 මිල වෙනස්වීම් (Returns & Price Changes)",
-        "⚡ උච්චාවචනය (Volatility & Range)",
-        "📈 ප්‍රවණතා (Moving Averages)"
+        "📊 All Columns",
+        "💰 Price Changes & Returns",
+        "⚡ Volatility & Range",
+        "📈 Moving Averages & Trend"
     ])
 
     with tab1:
@@ -347,7 +347,7 @@ else:
     st.markdown("---")
     col_dl1, col_dl2 = st.columns([2, 1])
     with col_dl1:
-        st.markdown(f"**ලබාගත් වාර්තා ගණන (Total Trading Days):** `{len(df)} records`")
+        st.markdown(f"**Total Records:** `{len(df)} trading days`")
         csv_data = df.to_csv(index=False).encode('utf-8')
         file_name = f"{raw_key}_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.csv"
         
@@ -359,4 +359,4 @@ else:
             key="download_csv"
         )
     with col_dl2:
-        st.info("💡 **Tip:** CSV එක බාගත කර Excel, Python, හෝ R මඟින් වැඩිදුර විශ්ලේෂණය සඳහා භාවිතා කළ හැක.")
+        st.info("💡 **Tip:** Download the CSV to perform further modeling, backtesting, or statistical analysis in Excel, Python, or R.")
